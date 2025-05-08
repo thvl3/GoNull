@@ -14,13 +14,14 @@ A C2 (Command and Control) Remote Access Tool (RAT) system that uses null-width 
 
 *   **Server:**
     *   Encodes commands using null-width characters.
-    *   (Potentially) Serves or helps place text with embedded commands.
-    *   Receives exfiltrated data from clients.
+    *   Helps place text with embedded commands (currently by printing to console).
+    *   Receives exfiltrated data from clients (Future Goal).
 *   **Client (RAT):**
-    *   Fetches web content.
-    *   Extracts and decodes commands from null-width characters.
-    *   Executes commands.
-    *   Sends results back to the server.
+    *   Fetches web content from a URL.
+    *   Extracts and decodes commands from null-width characters found in the fetched content.
+    *   Executes the decoded commands on the host system.
+    *   Displays command output to the console.
+    *   Sends results back to the server (Future Goal).
 
 ## How it Works
 
@@ -81,7 +82,7 @@ This is ‎​‌‌​‌​‌​​‌‌​‌‌​‌‏a friendly message
 
 ### 3. Running the Client (`cmd/client/main.go`)
 
-The client application is responsible for fetching or receiving text, extracting the hidden null-width command, decoding it, and (eventually) executing it.
+The client application is responsible for fetching web content from a URL, attempting to extract a hidden null-width command from that content, decoding it, and then executing it on the local system.
 
 **Steps:**
 
@@ -91,38 +92,46 @@ The client application is responsible for fetching or receiving text, extracting
     go run cmd/client/main.go
     ```
 3.  The application will prompt you to:
-    *   `Paste the text containing the hidden command ... (End input with an empty line or Ctrl+D)`
+    *   `Enter the URL to fetch content from:` Enter the full URL of the webpage where the command-carrying text is located (e.g., a Steam profile, a forum post).
 
-4.  **Paste the text** you copied from the server's output (or from the webpage/social media where it was placed).
-    *   If the text is multi-line, paste it and then press Enter on a new empty line to signal the end of input.
-    *   Alternatively, you can use Ctrl+D after pasting.
-
-5.  The client will then:
-    *   Attempt to extract and decode the command.
+4.  The client will then:
+    *   Attempt to fetch the content from the provided URL.
+    *   If successful, it will process the fetched content (e.g., HTML) to find and extract the null-width characters.
+    *   Decode these characters back into a command string.
     *   Print the decoded command.
+    *   Execute the decoded command and print its standard output/error.
 
 **Example Client Interaction:**
 
+Assume the server was used to embed the command `echo Hello from GoNull` into text on a webpage at `<URL_of_webpage_with_hidden_command>`.
+
 ```
 $ go run cmd/client/main.go
-Paste the text containing the hidden command (e.g., copied from a webpage or server output):
-(End input with an empty line or Ctrl+D)
-This is ‎​‌‌​‌​‌​​‌‌​‌‌​‌‏a friendly message for the club.
-(You press Enter on an empty line here if pasting multi-line, or just Ctrl+D)
+Enter the URL to fetch content from: <URL_of_webpage_with_hidden_command>
+YYYY/MM/DD HH:MM:SS Fetching content from: <URL_of_webpage_with_hidden_command>
+YYYY/MM/DD HH:MM:SS Attempting to extract hidden command from fetched content...
 
 --- Decoded Command ---
-Command: 'id'
+Command: 'echo Hello from GoNull'
 --- End of Command --- 
-...
-2023/10/27 10:05:00 Next step: Implement command execution for the decoded command.
+
+YYYY/MM/DD HH:MM:SS Executing command: 'echo Hello from GoNull'
+
+--- Command Output ---
+Hello from GoNull
+--- End of Output --- 
+
+YYYY/MM/DD HH:MM:SS Client finished operation.
 ```
+
+*(Note: The success of fetching and extraction depends on the accessibility of the URL, its content structure, and whether the null-width characters are preserved by the web platform. The command execution will run with the permissions of the user running the client application.)*
 
 ### Next Steps for the Project
 
-*   Implement actual command execution on the client-side.
-*   Develop methods for the client to fetch text from live URLs instead of manual pasting.
-*   Explore more sophisticated embedding and extraction techniques.
-*   (Potentially) Implement a way for the client to send back command output to the server (though this is a significant extension and might also use steganography or other covert channels).
+*   Explore more sophisticated embedding and extraction techniques (e.g., dealing with specific HTML structures, character encodings, or dynamic content loaded by JavaScript).
+*   Error handling and resilience for the client (e.g., retries, timeouts for HTTP requests, more robust command parsing).
+*   Stealthier command execution (e.g., running in the background, avoiding console windows on some OSes - though this goes against the "no evasion" principle for this project, good to be aware of for general C2).
+*   Implement a way for the client to send back command output to the server (e.g., via another steganographic message or a direct HTTP POST).
 
 ## Contributing
 
